@@ -123,7 +123,7 @@ def run(font_file, font_size=16, offset=(0, 0), text_file=None, text=None, bitma
     print(f"正在生成点阵字体文件，字体数量{font_num}：")
     # 字节记录占位
     bitmap_fonts.write(bytearray([
-        66, 77,  # 标记
+        66, 77,  # 标记   66->B, 77->F
         3,  # 版本
         0,  # 映射方式
         0, 0, 0,  # 位图开始字节
@@ -143,7 +143,7 @@ def run(font_file, font_size=16, offset=(0, 0), text_file=None, text=None, bitma
     file_size = bitmap_fonts.tell()
     print(f"\t文件大小：{file_size / 1024:.4f}KByte")
     bitmap_fonts.seek(4, 0)
-    bitmap_fonts.write(struct.pack(">i", start_bitmap)[1:4])
+    bitmap_fonts.write(struct.pack(">I", start_bitmap)[1:4])  # >I: 大端在前, unsigned int
     print(f"生成成功，文件名称：{bitmap_fonts_name}")
     return font_num, start_bitmap, file_size, bitmap_fonts_name, font_size, offset
 

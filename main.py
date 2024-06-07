@@ -76,9 +76,11 @@ def get_image(*args):
             f"预计大小:{(16 + len(set(text)) * font_size.get() ** 2 // 8 + len(set(text)) * 2) / 1024:.2f}KBytes")
         draw.text((offset_x.get(), offset_y.get()), preview_text.get()[0],
                   font=ImageFont.truetype(font=font_file, size=font_size.get()))
-        img = ImageTk.BitmapImage(im)
+        w,h = im.size
+        im = im.resize((w*3,h*3))
+        img = ImageTk.BitmapImage(im)        
         img_label = tk.Label(font_preview, bd=1, relief="sunken", image=img)
-        img_label.place(x=95, y=100, width=50, height=50, anchor="center")
+        img_label.place(x=95, y=120, width=150, height=150, anchor="center")
         return True
     return False
 
@@ -166,7 +168,7 @@ preview_text = tk.StringVar()
 preview_text.set("你")
 
 font_preview = tk.LabelFrame(root, text="预览")
-font_preview.place(x=420, y=10, width=190, height=200)
+font_preview.place(x=420, y=10, width=190, height=240)
 preview_text_input = tk.Entry(font_preview, textvariable=preview_text, width=8)
 preview_text_input.bind("<KeyRelease>", get_image)
 preview_text_input.grid(row=1, column=1)
@@ -176,7 +178,7 @@ tk.Button(font_preview, text="更新图像", command=get_image).grid(row=1, colu
 # 第四部分
 #
 bmf_generate = tk.LabelFrame(root, text="生成")
-bmf_generate.place(x=420, y=220, width=190, height=390)
+bmf_generate.place(x=420, y=260, width=190, height=350)
 tk.Label(bmf_generate, textvariable=estimated_size).grid(row=1, column=1)
 tk.Button(bmf_generate, text="生成点阵文件", command=save_file).grid(row=2, column=1)
 

@@ -66,29 +66,46 @@ def to_bitmap(word: str, font_size: int, font, offset=(0, 0)) -> bytearray:
     Returns:
         字节数据
     """
-    code = 0x00
-    data_code = word.encode("utf-8")
 
-    # 获取字节码
-    try:
-        for byte in range(len(data_code)):
-            code |= data_code[byte] << (len(data_code) - byte - 1) * 8
-    except IndexError:
-        print(word, word.encode("utf-8"))
+    # 此处没用处 
+    #
+    # code = 0x00
+    # data_code = word.encode("utf-8")
+    # 
+    # # 获取字节码
+    # try:
+    #     for byte in range(len(data_code)):
+    #         code |= data_code[byte] << (len(data_code) - byte - 1) * 8
+    # except IndexError:
+    #     print(word, word.encode("utf-8"))
+    # 
+    ## 以上代码(耗时~1.3us) 等价于以下语句 (耗时~300ns)
+    # code = int.from_bytes(word.encode('utf-8'),'big')
+
+    # 获得点阵图：
+    #  方法，OLED每8个点构成1个字节，对于图像点阵，先转换为数值，然后以8个为一组进行分组，
+    #        最后将每组数据转换为uint8型数据
 
     # 获取点阵图
-    bp = np.pad(
-        (~np.asarray(get_im(word, width=font_size, height=font_size, font=font, offset=offset))).astype(np.int32),
+    im = get_im(word, width=font_size, height=font_size, font=font, offset=offset)
+    bp = np.pad((~np.asarray(im)).astype(np.int32),
         ((0, 0), (0, int(np.ceil(font_size / 8) * 8 - font_size))), 'constant',
         constant_values=(0, 0))
 
-    # 点阵映射 MONO_HLSB
-    bmf = []
-    for line in bp.reshape((-1, 8)):
-        v = 0x00
-        for _ in line:
-            v = (v << 1) + _
-        bmf.append(v)
+    ## 点阵映射 MONO_HLSB
+    #  用以下方式转换，耗时约51.8us
+    # bmf = []
+    # for line in bp.reshape((-1, 8)):
+    #     v = 0x00
+    #     for _ in line:
+    #         v = (v << 1) + _
+    #     bmf.append(v)
+
+    # 此处利用矩阵运算，加速运算，耗时约2.65us
+    conver_matrix = np.array([0x01<<7,0x01<<6,0x01<<5,0x01<<4,0x01<<3,0x01<<2,0x01<<1,0x01])
+    bmf = bp.reshape((-1,8)).dot(conver_matrix)
+    bmf = bmf.tolist()
+
     return bytearray(bmf)
 
 
@@ -131,13 +148,15 @@ def run(font_file, font_size=16, offset=(0, 0), text_file=None, text=None, bitma
         int(np.ceil(font_size / 8)) * font_size,  # 每个字占用的大小
         0, 0, 0, 0, 0, 0, 0  # 兼容项
     ]))
-
+    
+    # 先写入字符编码
     for w in words:
         bitmap_fonts.write(get_unicode(w))
 
-    # 位图开始字节
+    # 保存一下字符对应位图的起始字节
     start_bitmap = bitmap_fonts.tell()
     print("\t位图起始字节：", hex(start_bitmap))
+    # 开始写入字符对应的各个位图字节
     for w in words:
         bitmap_fonts.write(to_bitmap(w, font_size, font, offset=offset))
     file_size = bitmap_fonts.tell()

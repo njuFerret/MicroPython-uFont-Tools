@@ -149,11 +149,11 @@ def run(font_file, font_size=16, offset=(0, 0), text_file=None, text=None, bitma
         0, 0, 0, 0, 0, 0, 0  # 兼容项
     ]))
     
-    # 先写入字符编码
+    # 先写入每个字符的utf-8码
     for w in words:
         bitmap_fonts.write(get_unicode(w))
 
-    # 保存一下字符对应位图的起始字节
+    # 保存上述字符对应位图的起始字节
     start_bitmap = bitmap_fonts.tell()
     print("\t位图起始字节：", hex(start_bitmap))
     # 开始写入字符对应的各个位图字节
